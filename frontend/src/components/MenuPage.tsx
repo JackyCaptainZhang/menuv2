@@ -21,13 +21,13 @@ interface Category {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'unlocked':
-      return { bg: '#e8f5e9', border: '#81c784' }; // 绿色
+      return { bg: '#e8f5e9', border: '#81c784', shadow: '0 2px 8px rgba(129, 199, 132, 0.2)' };
     case 'testing':
-      return { bg: '#fff3e0', border: '#ffb74d' }; // 橙色
+      return { bg: '#fff3e0', border: '#ffb74d', shadow: '0 2px 8px rgba(255, 183, 77, 0.2)' };
     case 'locked':
-      return { bg: '#f5f5f5', border: '#bdbdbd' }; // 灰色
+      return { bg: '#f5f5f5', border: '#bdbdbd', shadow: '0 2px 8px rgba(189, 189, 189, 0.2)' };
     default:
-      return { bg: '#f5f5f5', border: '#bdbdbd' };
+      return { bg: '#f5f5f5', border: '#bdbdbd', shadow: '0 2px 8px rgba(189, 189, 189, 0.2)' };
   }
 };
 
@@ -47,8 +47,10 @@ const StatusLegend = ({ lang }: { lang: 'en' | 'zh' }) => {
       padding: '12px',
       backgroundColor: '#fff',
       margin: '10px',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      borderRadius: '12px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+      transform: 'translateY(0)',
+      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     }}>
       {statuses.map(status => (
         <div
@@ -59,7 +61,8 @@ const StatusLegend = ({ lang }: { lang: 'en' | 'zh' }) => {
             backgroundColor: status.bg,
             color: status.color,
             fontSize: '14px',
-            fontWeight: 500
+            fontWeight: 500,
+            transition: 'transform 0.2s ease',
           }}
         >
           {status.label[lang]}
@@ -94,62 +97,152 @@ const MenuPage: React.FC<{ categories: Category[] }> = ({ categories }) => {
     <div style={{ paddingBottom: '70px' }}>
       <StatusLegend lang={lang} />
       {categories.map(category => (
-        <div key={category.id} style={{ margin: '10px', backgroundColor: '#fff', borderRadius: '8px' }}>
+        <div 
+          key={category.id} 
+          style={{ 
+            margin: '16px',
+            backgroundColor: '#fff',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+          }}
+        >
           <div
             onClick={() => handleCategoryClick(category.id)}
             style={{
-              padding: '15px',
+              padding: '20px',
               cursor: 'pointer',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              borderBottom: expandedCategory === category.id ? '1px solid #f0f0f0' : 'none',
+              transition: 'all 0.3s ease'
             }}
           >
-            <h3 style={{ margin: 0 }}>{category.name[lang]}</h3>
-            <span>{expandedCategory === category.id ? '▼' : '▶'}</span>
+            <h3 style={{ 
+              margin: 0,
+              fontSize: '18px',
+              color: '#333',
+              fontWeight: 600
+            }}>
+              {category.name[lang]}
+            </h3>
+            <span style={{
+              transform: `rotate(${expandedCategory === category.id ? 180 : 0}deg)`,
+              transition: 'transform 0.3s ease',
+              color: '#666',
+              fontSize: '14px'
+            }}>▼</span>
           </div>
           
-          {expandedCategory === category.id && (
-            <div style={{ padding: '0 15px 15px' }}>
-              {Array.from(new Set(category.dishes.map(d => d.subcategoryName[lang]))).map(subcat => (
-                <div key={subcat} style={{ marginBottom: '15px' }}>
-                  <h4 style={{ color: '#666', marginBottom: '10px' }}>{subcat}</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                    {sortDishesByStatus(category.dishes.filter(d => d.subcategoryName[lang] === subcat))
-                      .map(dish => {
-                        const colors = getStatusColor(dish.status);
-                        return (
-                          <div
-                            key={dish.id}
-                            onClick={() => handleDishClick(dish)}
-                            style={{
-                              padding: '8px 16px',
-                              borderRadius: '20px',
-                              backgroundColor: colors.bg,
-                              border: `1px solid ${colors.border}`,
-                              cursor: 'pointer',
+          <div style={{
+            height: expandedCategory === category.id ? 'auto' : '0',
+            opacity: expandedCategory === category.id ? 1 : 0,
+            overflow: 'hidden',
+            transition: 'all 0.3s ease',
+            padding: expandedCategory === category.id ? '0 20px 20px' : '0 20px',
+          }}>
+            {Array.from(new Set(category.dishes.map(d => d.subcategoryName[lang]))).map(subcat => (
+              <div key={subcat} style={{ marginTop: '16px' }}>
+                <h4 style={{ 
+                  color: '#666',
+                  margin: '0 0 12px 0',
+                  fontSize: '16px',
+                  fontWeight: 500
+                }}>
+                  {subcat}
+                </h4>
+                <div style={{ 
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  {sortDishesByStatus(category.dishes.filter(d => d.subcategoryName[lang] === subcat))
+                    .map((dish, index) => {
+                      const colors = getStatusColor(dish.status);
+                      return (
+                        <div
+                          key={dish.id}
+                          onClick={() => handleDishClick(dish)}
+                          style={{
+                            padding: '10px 16px',
+                            borderRadius: '20px',
+                            backgroundColor: colors.bg,
+                            border: `1px solid ${colors.border}`,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: colors.shadow,
+                            transform: 'translateY(0) scale(1)',
+                            transition: 'all 0.2s ease',
+                            animation: `fadeIn 0.3s ease forwards ${index * 0.05}s`,
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                            e.currentTarget.style.boxShadow = colors.shadow.replace('2px 8px', '4px 12px');
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            e.currentTarget.style.boxShadow = colors.shadow;
+                          }}
+                        >
+                          <span style={{
+                            fontSize: '15px',
+                            color: '#333',
+                            fontWeight: 500
+                          }}>
+                            {dish.name[lang]}
+                          </span>
+                          {dish.emoji && <span>{dish.emoji}</span>}
+                          {dish.rating && (
+                            <span style={{ 
+                              color: '#ffc107',
+                              fontSize: '14px',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <span>{dish.name[lang]}</span>
-                            {dish.emoji && <span>{dish.emoji}</span>}
-                            {dish.rating && <span style={{ color: '#ffc107' }}>⭐{dish.rating}</span>}
-                          </div>
-                        );
-                      })}
-                  </div>
+                              gap: '2px'
+                            }}>
+                              ⭐<span style={{ fontSize: '13px' }}>{dish.rating}</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
       
       {selectedDish && (
         <DishCard dish={selectedDish} onClose={() => setSelectedDish(null)} />
       )}
+
+      <style>
+        {`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

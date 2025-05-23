@@ -4,6 +4,7 @@ import uiText from './i18n';
 import axios from 'axios';
 import BottomNav from './components/BottomNav';
 import MenuPage from './components/MenuPage';
+import RecipePage from './components/RecipePage';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -128,15 +129,22 @@ const MainContent = () => {
   const { lang } = useLanguage();
   const [currentTab, setCurrentTab] = useState<'menu' | 'recipe'>('menu');
   const [categories, setCategories] = useState<any[]>([]);
+  const [ingredientTips, setIngredientTips] = useState<any[]>([]);
+  const [sauceRecipes, setSauceRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: dishes } = await axios.get(`${API_BASE}/dishes`);
-        
-        // 按categoryId和categoryName分组
-        const groupedDishes = dishes.reduce((acc: any, dish: any) => {
+        setLoading(true);
+        const [dishesRes, tipsRes, saucesRes] = await Promise.all([
+          axios.get(`${API_BASE}/dishes`),
+          axios.get(`${API_BASE}/ingredient_tips`),
+          axios.get(`${API_BASE}/sauce_recipes`)
+        ]);
+
+        // Process dishes data
+        const groupedDishes = dishesRes.data.reduce((acc: any, dish: any) => {
           const categoryId = dish.categoryId;
           if (!acc[categoryId]) {
             acc[categoryId] = {
@@ -153,9 +161,9 @@ const MainContent = () => {
           return acc;
         }, {});
 
-        // 转换为数组并排序
-        const categoriesArray = Object.values(groupedDishes);
-        setCategories(categoriesArray);
+        setCategories(Object.values(groupedDishes));
+        setIngredientTips(tipsRes.data);
+        setSauceRecipes(saucesRes.data);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -169,18 +177,19 @@ const MainContent = () => {
     <div style={{ 
       minHeight: '100vh', 
       backgroundColor: '#fff0f5',
-      paddingTop: '56px' // 为标题栏留出空间
+      paddingTop: '56px'
     }}>
-      {currentTab === 'menu' ? (
-        loading ? (
-          <div style={{ padding: 32 }}>{lang === 'en' ? 'Loading...' : '加载中...'}</div>
-        ) : (
-          <MenuPage categories={categories} />
-        )
+      {loading ? (
+        <div style={{ padding: 32 }}>{lang === 'en' ? 'Loading...' : '加载中...'}</div>
       ) : (
-        <div style={{ padding: 32 }}>
-          {lang === 'en' ? 'Recipe Book Coming Soon...' : '食谱秘籍即将推出...'}
-        </div>
+        currentTab === 'menu' ? (
+          <MenuPage categories={categories} />
+        ) : (
+          <RecipePage 
+            ingredientTips={ingredientTips}
+            sauceRecipes={sauceRecipes}
+          />
+        )
       )}
       <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
     </div>
