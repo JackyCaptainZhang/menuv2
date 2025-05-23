@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { LanguageProvider, useLanguage } from './LanguageContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import uiText from './i18n';
 import axios from 'axios';
 import BottomNav from './components/BottomNav';
 import MenuPage from './components/MenuPage';
 import RecipePage from './components/RecipePage';
+import LoginButton from './components/LoginButton';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -108,25 +110,35 @@ const TitleBar = () => {
       }}>
         {lang === 'en' ? "Jacky & Yuan's Menu 😋" : '乐乐&袁宝の美味Menu😋'}
       </h1>
-      <button
-        onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-        style={{
-          padding: '8px 16px',
-          borderRadius: '20px',
-          border: '1px solid #e91e63',
-          backgroundColor: '#fff',
-          color: '#e91e63',
-          cursor: 'pointer'
-        }}
-      >
-        {lang === 'en' ? '切换为中文' : 'Switch to English'}
-      </button>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <LoginButton />
+        <button
+          onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '20px',
+            border: '1px solid #e91e63',
+            backgroundColor: '#fff',
+            color: '#e91e63',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+        >
+          {lang === 'en' ? '切换为中文' : 'Switch to English'}
+        </button>
+      </div>
     </div>
   );
 };
 
 const MainContent = () => {
   const { lang } = useLanguage();
+  const { isAdmin } = useAuth();
   const [currentTab, setCurrentTab] = useState<'menu' | 'recipe'>('menu');
   const [categories, setCategories] = useState<any[]>([]);
   const [ingredientTips, setIngredientTips] = useState<any[]>([]);
@@ -183,11 +195,12 @@ const MainContent = () => {
         <div style={{ padding: 32 }}>{lang === 'en' ? 'Loading...' : '加载中...'}</div>
       ) : (
         currentTab === 'menu' ? (
-          <MenuPage categories={categories} />
+          <MenuPage categories={categories} isAdmin={isAdmin} />
         ) : (
           <RecipePage 
             ingredientTips={ingredientTips}
             sauceRecipes={sauceRecipes}
+            isAdmin={isAdmin}
           />
         )
       )}
@@ -198,10 +211,12 @@ const MainContent = () => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <TitleBar />
-      <MainContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <TitleBar />
+        <MainContent />
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
 

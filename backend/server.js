@@ -23,6 +23,39 @@ app.get('/api/hello', (req, res) => {
   res.send('Hello from the backend!');
 });
 
+// ========== Admin Routes ==========
+// Get all admins
+app.get('/api/admins', async (req, res) => {
+  try {
+    console.log('Fetching admins...');
+    const snapshot = await db.collection('admins').get();
+    
+    if (snapshot.empty) {
+      console.log('No admin documents found');
+      return res.json([]);
+    }
+
+    const admins = [];
+    snapshot.forEach(doc => {
+      console.log(`Processing admin document: ${doc.id}`);
+      const data = doc.data();
+      admins.push({
+        email: data.email,
+        name: doc.id
+      });
+    });
+
+    console.log('Successfully retrieved admins:', admins);
+    res.json(admins);
+  } catch (error) {
+    console.error('Error getting admins:', error);
+    res.status(500).json({ 
+      error: 'Failed to get admins', 
+      details: error.message 
+    });
+  }
+});
+
 // Get all dishes
 app.get('/api/dishes', async (req, res) => {
   try {

@@ -3,6 +3,7 @@ import { useLanguage } from '../LanguageContext';
 
 interface DishCardProps {
   dish: {
+    id: string;
     name: { en: string; zh: string };
     rating?: number;
     emoji?: string;
@@ -10,6 +11,9 @@ interface DishCardProps {
     status: 'unlocked' | 'testing' | 'locked';
   };
   onClose: () => void;
+  isAdmin?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const getStatusInfo = (status: string, lang: 'en' | 'zh'): { text: string; color: string; bg: string } => {
@@ -41,9 +45,16 @@ const getStatusInfo = (status: string, lang: 'en' | 'zh'): { text: string; color
   }
 };
 
-const DishCard: React.FC<DishCardProps> = ({ dish, onClose }) => {
+const DishCard: React.FC<DishCardProps> = ({ dish, onClose, isAdmin, onEdit, onDelete }) => {
   const { lang } = useLanguage();
   const statusInfo = getStatusInfo(dish.status, lang);
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(lang === 'en' ? 'Are you sure to delete this dish?' : '确定要删除这道菜吗？')) {
+      onDelete?.();
+    }
+  };
 
   return (
     <div style={{
@@ -99,6 +110,57 @@ const DishCard: React.FC<DishCardProps> = ({ dish, onClose }) => {
             }}>
               {statusInfo.text}
             </div>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.();
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#e91e63',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '16px',
+                    transition: 'background-color 0.2s',
+                    fontSize: '18px'
+                  }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#fff0f5')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#f44336',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '16px',
+                    transition: 'background-color 0.2s',
+                    fontSize: '18px'
+                  }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = '#ffebee')}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  🗑️
+                </button>
+              </>
+            )}
             <button 
               onClick={onClose}
               style={{
@@ -139,7 +201,8 @@ const DishCard: React.FC<DishCardProps> = ({ dish, onClose }) => {
               borderRadius: '8px',
               color: '#333',
               fontSize: '14px',
-              lineHeight: '1.5'
+              lineHeight: '1.5',
+              whiteSpace: 'pre-wrap'
             }}>
               {dish.notes[lang]}
             </div>
