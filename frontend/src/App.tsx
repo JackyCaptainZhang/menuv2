@@ -15,49 +15,156 @@ const TitleBar = () => {
   const { lang, setLang } = useLanguage();
   
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '56px',
-      backgroundColor: '#fff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 16px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      zIndex: 100
-    }}>
-      <h1 style={{ 
-        margin: 0, 
-        fontSize: '20px',
-        color: '#e91e63'
-      }}>
-        {lang === 'en' ? "Jacky & Yuan's Menu 😋" : '乐乐&袁宝の美味Menu😋'}
-      </h1>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
-      }}>
-        <LoginButton />
+    <div
+      className="titlebar-root"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        zIndex: 100,
+        padding: 0,
+        width: '100%',
+      }}
+    >
+      <div
+        className="titlebar-inner"
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          height: '56px',
+        }}
+      >
+        <div
+          className="titlebar-title"
+          style={{
+            margin: 0,
+            fontSize: '20px',
+            color: '#e91e63',
+            fontWeight: 700,
+            flex: 1,
+            textAlign: 'left',
+          }}
+        >
+          {lang === 'en' ? "Jacky & Yuan's Menu 😋" : '乐乐&袁宝の美味Menu😋'}
+        </div>
+        <div
+          className="titlebar-actions"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <LoginButton style={{
+            padding: '4px 10px',
+            borderRadius: '14px',
+            fontSize: '13px',
+            height: '32px',
+            minWidth: 'auto',
+          }} />
+          <button
+            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '14px',
+              border: '1px solid #e91e63',
+              backgroundColor: '#fff',
+              color: '#e91e63',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500,
+              height: '32px',
+              minWidth: 'auto',
+            }}
+          >
+            {lang === 'en' ? '切换为中文' : 'Switch to English'}
+          </button>
+        </div>
+      </div>
+      {/* 手机端按钮单独一行 */}
+      <div className="titlebar-actions-mobile">
+        <LoginButton style={{
+          padding: '4px 10px',
+          borderRadius: '14px',
+          fontSize: '13px',
+          height: '32px',
+          minWidth: 'auto',
+        }} />
         <button
           onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
           style={{
-            padding: '8px 16px',
-            borderRadius: '20px',
+            padding: '4px 10px',
+            borderRadius: '14px',
             border: '1px solid #e91e63',
             backgroundColor: '#fff',
             color: '#e91e63',
             cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500
+            fontSize: '13px',
+            fontWeight: 500,
+            height: '32px',
+            minWidth: 'auto',
+            marginLeft: '8px',
           }}
         >
           {lang === 'en' ? '切换为中文' : 'Switch to English'}
         </button>
       </div>
+      {/* 响应式样式 */}
+      <style>{`
+        .titlebar-actions-mobile {
+          display: none;
+        }
+        @media (max-width: 600px) {
+          .titlebar-inner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            height: auto !important;
+            padding: 8px 16px 0 16px !important;
+          }
+          .titlebar-title {
+            font-size: 17px !important;
+            padding-bottom: 0 !important;
+            width: 100% !important;
+            text-align: left !important;
+          }
+          .titlebar-actions {
+            display: none !important;
+          }
+          .titlebar-actions-mobile {
+            display: flex !important;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: flex-start;
+            padding: 4px 16px 8px 16px;
+          }
+        }
+        @media (min-width: 601px) {
+          .titlebar-inner {
+            flex-direction: row !important;
+            align-items: center !important;
+            height: 56px !important;
+            padding: 0 16px !important;
+          }
+          .titlebar-title {
+            font-size: 20px !important;
+            width: auto !important;
+          }
+          .titlebar-actions {
+            display: flex !important;
+          }
+          .titlebar-actions-mobile {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
@@ -111,12 +218,28 @@ const MainContent = () => {
     fetchData();
   }, []);
 
+  // 响应式 paddingTop，防止内容被 TitleBar 遮挡
+  const [paddingTop, setPaddingTop] = useState(56);
+  useEffect(() => {
+    const updatePadding = () => {
+      if (window.innerWidth <= 600) {
+        setPaddingTop(96); // 手机端 TitleBar 约两行高度
+      } else {
+        setPaddingTop(56); // 电脑端 TitleBar 一行高度
+      }
+    };
+    updatePadding();
+    window.addEventListener('resize', updatePadding);
+    return () => window.removeEventListener('resize', updatePadding);
+  }, []);
+
   return (
     <div style={{ 
       minHeight: '100vh', 
       backgroundColor: '#fff0f5',
-      paddingTop: '56px'
+      paddingTop: paddingTop,
     }}>
+      {/* 状态说明组件应在这里插入（如有） */}
       {loading ? (
         <div style={{ padding: 32 }}>{lang === 'en' ? 'Loading...' : '加载中...'}</div>
       ) : (

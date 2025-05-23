@@ -3,7 +3,11 @@ import { useAuth } from '../AuthContext';
 import { signInWithGoogle, signOutUser } from '../firebase';
 import { useLanguage } from '../LanguageContext';
 
-const LoginButton: React.FC = () => {
+interface LoginButtonProps {
+  style?: React.CSSProperties;
+}
+
+const LoginButton: React.FC<LoginButtonProps> = ({ style }) => {
   const { user, isAdmin } = useAuth();
   const { lang } = useLanguage();
 
@@ -23,18 +27,21 @@ const LoginButton: React.FC = () => {
     <button
       onClick={handleAuth}
       style={{
-        padding: '8px 16px',
-        borderRadius: '20px',
+        padding: '4px 10px',
+        borderRadius: '14px',
         border: '1px solid #e91e63',
         backgroundColor: user ? '#fff' : '#e91e63',
         color: user ? '#e91e63' : '#fff',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        fontSize: '14px',
+        gap: '6px',
+        fontSize: '13px',
         fontWeight: 500,
+        height: '32px',
+        minWidth: 'auto',
         transition: 'all 0.2s ease',
+        ...style
       }}
     >
       {user ? (
@@ -43,9 +50,9 @@ const LoginButton: React.FC = () => {
             src={user.photoURL || ''} 
             alt="profile" 
             style={{ 
-              width: '24px', 
-              height: '24px', 
-              borderRadius: '12px',
+              width: '20px', 
+              height: '20px', 
+              borderRadius: '10px',
               border: '1px solid #e91e63'
             }} 
           />
