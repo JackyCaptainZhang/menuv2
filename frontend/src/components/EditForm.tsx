@@ -268,14 +268,16 @@ const EditForm: React.FC<EditFormProps> = ({ type, data, onClose, onSave, catego
         overflow: 'auto'
       }}>
         <h2 style={{ margin: '0 0 16px 0', color: '#e91e63', fontSize: '18px' }}>
-          {type === 'dish' ? (lang === 'en' ? 'Edit Dish' : '编辑菜品') :
-           type === 'ingredient' ? (lang === 'en' ? 'Edit Ingredient' : '编辑食材') :
-           (lang === 'en' ? 'Edit Sauce' : '编辑酱料')}
+          {type === 'dish' ? 
+            (!data.id ? (lang === 'en' ? 'Add Dish' : '添加菜品') : (lang === 'en' ? 'Edit Dish' : '编辑菜品')) :
+           type === 'ingredient' ? 
+            (!data.id ? (lang === 'en' ? 'Add Ingredient' : '添加食材') : (lang === 'en' ? 'Edit Ingredient' : '编辑食材')) :
+            (!data.id ? (lang === 'en' ? 'Add Sauce' : '添加酱料') : (lang === 'en' ? 'Edit Sauce' : '编辑酱料'))}
         </h2>
         <form onSubmit={handleSubmit}>
           {renderField(lang === 'en' ? 'Name' : '名称', 'name', 'text', true)}
           
-          {type === 'dish' && (
+          {type === 'dish' ? (
             <>
               {renderCategorySelect(lang === 'en' ? 'Category' : '分类')}
               {renderField(lang === 'en' ? 'Subcategory' : '子分类', 'subcategoryName', 'text', true)}
@@ -309,13 +311,9 @@ const EditForm: React.FC<EditFormProps> = ({ type, data, onClose, onSave, catego
                 </select>
               </div>
             </>
-          )}
-
-          {type === 'ingredient' && (
+          ) : type === 'ingredient' ? (
             renderField(lang === 'en' ? 'Description' : '描述', 'description', 'text', true, true)
-          )}
-
-          {type === 'sauce' && (
+          ) : (
             renderField(lang === 'en' ? 'Recipe' : '配方', 'recipe', 'text', true, true)
           )}
 
