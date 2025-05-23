@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
-import axios from 'axios';
-import { config } from '../config';
 import { v4 as uuidv4 } from 'uuid';
 import pinyin from 'pinyin';
-
-const { API_BASE } = config;
 
 interface BilingualField {
   en: string;

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
 import DishCard from './DishCard';
-import EditButton from './EditButton';
 import EditForm from './EditForm';
 import axios from 'axios';
 import { config } from '../config';
