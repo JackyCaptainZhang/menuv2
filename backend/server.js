@@ -167,12 +167,6 @@ app.get('/api/ingredient_tips/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// 生成安全的文档ID
-const generateSafeId = (prefix) => {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
-  return `${prefix}_${timestamp}_${random}`;
-};
 
 // Create ingredient_tips
 app.post('/api/ingredient_tips', async (req, res) => {
