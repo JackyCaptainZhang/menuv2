@@ -23,3 +23,5 @@ yarn-debug.log*
 yarn-error.log*
 menu-app-823bd-firebase-adminsdk-fbsvc-d76d867ba6.json
 .env
+
+.vercel
