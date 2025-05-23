@@ -4,8 +4,9 @@ import DishCard from './DishCard';
 import EditButton from './EditButton';
 import EditForm from './EditForm';
 import axios from 'axios';
+import { config } from '../config';
 
-const API_BASE = 'http://localhost:5000/api';
+const { API_BASE } = config;
 
 interface BilingualField {
   en: string;
@@ -128,7 +129,6 @@ const MenuPage: React.FC<MenuPageProps> = ({ categories, isAdmin }) => {
       );
       setSelectedDish(null);
     } catch (error) {
-      console.error('Failed to delete dish:', error);
       alert(lang === 'en' ? 'Failed to delete dish' : '删除失败');
     }
   };
@@ -173,13 +173,15 @@ const MenuPage: React.FC<MenuPageProps> = ({ categories, isAdmin }) => {
   // 局部更新函数
   const handleDishUpdate = async (updatedDish: Dish) => {
     try {
-      // 如果是新菜品，先发送请求创建
-      if (!updatedDish.id) {
+      // 判断新建还是编辑，依据 editingDish.id 是否存在
+      if (!editingDish || !editingDish.id) {
+        // 新建，POST，保留 id 字段
         const response = await axios.post(`${API_BASE}/dishes`, updatedDish);
-        updatedDish.id = response.data.id;
+        updatedDish = { ...updatedDish, id: response.data.id };
       } else {
-        // 如果是更新已有菜品，发送更新请求
-        await axios.put(`${API_BASE}/dishes/${updatedDish.id}`, updatedDish);
+        // 编辑，PUT
+        const { id, ...updateData } = updatedDish;
+        await axios.put(`${API_BASE}/dishes/${updatedDish.id}`, updateData);
       }
 
       // 保存新的分类ID（从newDishInfo或者在localCategories中查找）
@@ -277,7 +279,6 @@ const MenuPage: React.FC<MenuPageProps> = ({ categories, isAdmin }) => {
       }, 0);
 
     } catch (error) {
-      console.error('Failed to save dish:', error);
       alert(lang === 'en' ? 'Failed to save dish' : '保存失败');
     }
   };

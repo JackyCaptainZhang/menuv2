@@ -34,8 +34,8 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const app = express();
+app.use(express.json({ limit: '1mb' }));
 app.use(cors());
-app.use(express.json());
 
 // Example API endpoint
 app.get('/api/hello', (req, res) => {
@@ -46,17 +46,14 @@ app.get('/api/hello', (req, res) => {
 // Get all admins
 app.get('/api/admins', async (req, res) => {
   try {
-    console.log('Fetching admins...');
     const snapshot = await db.collection('admins').get();
     
     if (snapshot.empty) {
-      console.log('No admin documents found');
       return res.json([]);
     }
 
     const admins = [];
     snapshot.forEach(doc => {
-      console.log(`Processing admin document: ${doc.id}`);
       const data = doc.data();
       admins.push({
         email: data.email,
@@ -64,10 +61,8 @@ app.get('/api/admins', async (req, res) => {
       });
     });
 
-    console.log('Successfully retrieved admins:', admins);
     res.json(admins);
   } catch (error) {
-    console.error('Error getting admins:', error);
     res.status(500).json({ 
       error: 'Failed to get admins', 
       details: error.message 
@@ -97,56 +92,26 @@ app.get('/api/dishes/:id', async (req, res) => {
   }
 });
 
-// 通用：生成安全ID
-const toSafeId = (str) => {
-  const processed = str
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]/g, '_')  // 保留中文字符
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  
-  // 如果处理后的ID为空，使用时间戳作为后备
-  if (!processed) {
-    return `item_${Date.now()}`;
-  }
-  return processed;
-};
-
-// Create a new dish（用中文名或英文名作为ID）
+// Create a new dish
 app.post('/api/dishes', async (req, res) => {
   try {
     const data = req.body;
-    let baseId = '';
-    
-    // 尝试从名称生成ID
-    if (data.name && (data.name.zh || data.name.en)) {
-      if (data.name.zh) {
-        baseId = toSafeId(data.name.zh);
-      }
-      if (!baseId && data.name.en) {
-        baseId = toSafeId(data.name.en);
-      }
-    }
-    
-    // 如果没有生成有效的ID，使用时间戳
-    if (!baseId) {
-      baseId = `dish_${Date.now()}`;
-    }
+    const { id, ...rest } = data;
 
-    // 检查是否已存在同名ID
-    const docRef = db.collection('dishes').doc(baseId);
-    const doc = await docRef.get();
-    if (doc.exists) {
-      // 如果ID已存在，添加时间戳后缀
-      baseId = `${baseId}_${Date.now()}`;
+    if (typeof id === 'string' && id.trim() !== '') {
+      await db.collection('dishes').doc(id).set(rest);
+      res.status(201).json({ id });
+    } else {
+      const docRef = await db.collection('dishes').add(rest);
+      res.status(201).json({ id: docRef.id });
     }
-    
-    // 创建新文档
-    await db.collection('dishes').doc(baseId).set(data);
-    res.status(201).json({ id: baseId, ...data });
   } catch (error) {
-    console.error('Error creating dish:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message,
+      details: error.stack,
+      id: req.body.id,
+      body: req.body
+    });
   }
 });
 
@@ -158,7 +123,8 @@ app.put('/api/dishes/:id', async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ error: 'Dish not found' });
     }
-    await docRef.update(req.body);
+    const { id, ...rest } = req.body;
+    await docRef.update(rest);
     res.json({ id: req.params.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -201,27 +167,30 @@ app.get('/api/ingredient_tips/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Create
+// 生成安全的文档ID
+const generateSafeId = (prefix) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${prefix}_${timestamp}_${random}`;
+};
+
+// Create ingredient_tips
 app.post('/api/ingredient_tips', async (req, res) => {
   try {
     const data = req.body;
-    let baseId = '';
-    if (data.name && data.name.zh) {
-      baseId = toSafeId(data.name.zh);
-    } else if (data.name && data.name.en) {
-      baseId = toSafeId(data.name.en);
-    } else {
-      return res.status(400).json({ error: 'Name is required' });
+    const { id, name, description } = data;
+    // 只用前端传来的 id（uuid），不做任何处理
+    if (typeof id === 'string' && id.trim() !== '') {
+      await db.collection('ingredient_tips').doc(id).set({ name, description });
+      res.status(201).json({ id });
     }
-    const docRef = db.collection('ingredient_tips').doc(baseId);
-    const doc = await docRef.get();
-    if (doc.exists) {
-      return res.status(409).json({ error: 'Item with this name already exists' });
-    }
-    await docRef.set(data);
-    res.status(201).json({ id: baseId });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message,
+      details: error.stack,
+      id: req.body.id,
+      body: req.body
+    });
   }
 });
 // Update
@@ -232,7 +201,8 @@ app.put('/api/ingredient_tips/:id', async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ error: 'Item not found' });
     }
-    await docRef.update(req.body);
+    const { id, ...rest } = req.body;
+    await docRef.update(rest);
     res.json({ id: req.params.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -274,27 +244,26 @@ app.get('/api/sauce_recipes/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Create
+// Create sauce_recipes
 app.post('/api/sauce_recipes', async (req, res) => {
   try {
     const data = req.body;
-    let baseId = '';
-    if (data.name && data.name.zh) {
-      baseId = toSafeId(data.name.zh);
-    } else if (data.name && data.name.en) {
-      baseId = toSafeId(data.name.en);
+    const { id, ...rest } = data;
+
+    if (typeof id === 'string' && id.trim() !== '') {
+      await db.collection('sauce_recipes').doc(id).set(rest);
+      res.status(201).json({ id });
     } else {
-      return res.status(400).json({ error: 'Name is required' });
+      const docRef = await db.collection('sauce_recipes').add(rest);
+      res.status(201).json({ id: docRef.id });
     }
-    const docRef = db.collection('sauce_recipes').doc(baseId);
-    const doc = await docRef.get();
-    if (doc.exists) {
-      return res.status(409).json({ error: 'Item with this name already exists' });
-    }
-    await docRef.set(data);
-    res.status(201).json({ id: baseId });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message,
+      details: error.stack,
+      id: req.body.id,
+      body: req.body
+    });
   }
 });
 // Update
@@ -305,7 +274,8 @@ app.put('/api/sauce_recipes/:id', async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ error: 'Item not found' });
     }
-    await docRef.update(req.body);
+    const { id, ...rest } = req.body;
+    await docRef.update(rest);
     res.json({ id: req.params.id });
   } catch (error) {
     res.status(500).json({ error: error.message });

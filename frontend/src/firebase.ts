@@ -1,8 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import axios from 'axios';
+import { config } from './config';
 
-const API_BASE = 'http://localhost:5000/api';
+const { API_BASE } = config;
 
 const firebaseConfig = {
   apiKey: "AIzaSyAcoX8YHHH5yXQd6_5f-LQKFRcPvGauE1M",

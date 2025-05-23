@@ -7,8 +7,9 @@ import BottomNav from './components/BottomNav';
 import MenuPage from './components/MenuPage';
 import RecipePage from './components/RecipePage';
 import LoginButton from './components/LoginButton';
+import { config } from './config';
 
-const API_BASE = 'http://localhost:5000/api';
+const { API_BASE } = config;
 
 const STATUS_COLORS: Record<string, string> = {
   unlocked: '#4caf50', // 已解锁

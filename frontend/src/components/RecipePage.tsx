@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
 import EditButton from './EditButton';
 import EditForm from './EditForm';
 import axios from 'axios';
+import { config } from '../config';
 
-const API_BASE = 'http://localhost:5000/api';
+const { API_BASE } = config;
 
 interface IngredientTip {
   id: string;
@@ -42,60 +43,57 @@ const RecipePage: React.FC<RecipePageProps> = ({ ingredientTips: initialIngredie
   const handleSave = async (type: 'ingredient' | 'sauce', data: any) => {
     try {
       const endpoint = type === 'ingredient' ? 'ingredient_tips' : 'sauce_recipes';
-      
-      // 只保留必要的字段，并指定正确的类型
       const cleanedData = type === 'ingredient' 
         ? {
             id: data.id,
             name: data.name,
             description: data.description
-          } as IngredientTip
+          }
         : {
             id: data.id,
             name: data.name,
             recipe: data.recipe
-          } as SauceRecipe;
+          };
 
       let updatedData: IngredientTip | SauceRecipe;
 
-      if (data.id) {
-        // 更新已有项目
-        await axios.put(`${API_BASE}/${endpoint}/${data.id}`, cleanedData);
-        updatedData = cleanedData;
+      // 判断是编辑还是新增
+      const list = type === 'ingredient' ? ingredientTips : sauceRecipes;
+      const isEdit = !!data.id && list.some(item => item.id === data.id);
+
+      if (isEdit) {
+        // 编辑
+        const { id, ...updateData } = cleanedData;
+        await axios.put(`${API_BASE}/${endpoint}/${data.id}`, updateData);
+        updatedData = { ...cleanedData, id: data.id } as any;
       } else {
-        // 添加新项目
+        // 新增
         const response = await axios.post(`${API_BASE}/${endpoint}`, cleanedData);
-        updatedData = { ...cleanedData, id: response.data.id };
+        updatedData = { ...cleanedData, id: response.data.id || data.id } as any;
       }
 
       // 更新本地状态
       if (type === 'ingredient') {
         setIngredientTips(prev => {
-          if (data.id) {
-            // 更新已有食材
+          if (isEdit) {
             return prev.map(item => item.id === data.id ? updatedData as IngredientTip : item);
           } else {
-            // 添加新食材
             return [...prev, updatedData as IngredientTip];
           }
         });
       } else {
         setSauceRecipes(prev => {
-          if (data.id) {
-            // 更新已有酱料
+          if (isEdit) {
             return prev.map(item => item.id === data.id ? updatedData as SauceRecipe : item);
           } else {
-            // 添加新酱料
             return [...prev, updatedData as SauceRecipe];
           }
         });
       }
 
-      // 关闭表单
       setEditingItem(null);
       setShowNewForm(null);
     } catch (error) {
-      console.error('Failed to save:', error);
       alert(lang === 'en' ? 'Failed to save' : '保存失败');
     }
   };
@@ -116,7 +114,6 @@ const RecipePage: React.FC<RecipePageProps> = ({ ingredientTips: initialIngredie
         setSauceRecipes(prev => prev.filter(item => item.id !== id));
       }
     } catch (error) {
-      console.error('Failed to delete:', error);
       alert(lang === 'en' ? 'Failed to delete' : '删除失败');
     }
   };

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
 import axios from 'axios';
+import { config } from '../config';
+import { v4 as uuidv4 } from 'uuid';
+import pinyin from 'pinyin';
 
-const API_BASE = 'http://localhost:5000/api';
+const { API_BASE } = config;
 
 interface BilingualField {
   en: string;
@@ -36,6 +39,21 @@ interface EditFormProps {
   onClose: () => void;
   onSave: (updatedData: FormData) => void;
   categories?: Category[];
+}
+
+function getPinyinOrRaw(str: string): string {
+  if (!str || typeof str !== 'string') return 'unknown';
+  const hasChinese = /[\u4e00-\u9fa5]/.test(str);
+  let base = '';
+  if (hasChinese) {
+    base = pinyin(str, { style: pinyin.STYLE_NORMAL })
+      .flat()
+      .join('');
+  } else {
+    base = str;
+  }
+  base = base.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  return base || 'unknown';
 }
 
 const EditForm: React.FC<EditFormProps> = ({ type, data, onClose, onSave, categories }) => {
@@ -94,11 +112,64 @@ const EditForm: React.FC<EditFormProps> = ({ type, data, onClose, onSave, catego
       return;
     }
 
-    if (!formData.subcategoryName.en.trim() || !formData.subcategoryName.zh.trim()) {
-      formData.subcategoryName = { en: 'Others', zh: '其他' };
+    let cleanedData: any;
+    if (type === 'dish') {
+      let id = formData.id;
+      if (!id || id.trim() === '') {
+        const zhName = formData.name.zh;
+        const py = getPinyinOrRaw(zhName);
+        id = `dish_${py}_${uuidv4()}`;
+      }
+      if (!formData.subcategoryName.en.trim() || !formData.subcategoryName.zh.trim()) {
+        formData.subcategoryName = { en: 'Others', zh: '其他' };
+      }
+      cleanedData = {
+        id,
+        name: {
+          en: formData.name.en.trim(),
+          zh: formData.name.zh.trim()
+        },
+        status: formData.status,
+        categoryName: formData.categoryName || { en: '', zh: '' },
+        categoryId: formData.categoryId,
+        subcategoryName: formData.subcategoryName || { en: 'Others', zh: '其他' },
+        rating: formData.rating,
+        emoji: formData.emoji,
+        notes: formData.notes
+      };
+    } else if (type === 'ingredient') {
+      let id = formData.id;
+      if (!id || id.trim() === '') {
+        const zhName = formData.name.zh;
+        const py = getPinyinOrRaw(zhName);
+        id = `ingredient_${py}_${uuidv4()}`;
+      }
+      cleanedData = {
+        id,
+        name: {
+          en: formData.name.en.trim(),
+          zh: formData.name.zh.trim()
+        },
+        description: formData.description || { en: '', zh: '' }
+      };
+    } else if (type === 'sauce') {
+      let id = formData.id;
+      if (!id || id.trim() === '') {
+        const zhName = formData.name.zh;
+        const py = getPinyinOrRaw(zhName);
+        id = `sauce_${py}_${uuidv4()}`;
+      }
+      cleanedData = {
+        id,
+        name: {
+          en: formData.name.en.trim(),
+          zh: formData.name.zh.trim()
+        },
+        recipe: formData.recipe || { en: '', zh: '' }
+      };
     }
 
-    onSave(formData);
+    onSave(cleanedData);
     onClose();
   };
 
